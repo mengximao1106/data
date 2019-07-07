@@ -1,0 +1,247 @@
+
+
+模板
+ final String[] titleRec = {"","",""}
+
+1、Excel导出
+1）根据MultipartFile获取输入流  file.getInputStream();
+2）创建WorkBook   = WorkbookFactory.create(in);
+3)根据sheet名称获取sheet Sheet sheet1 = book.getSheet("");
+4)获取总列数   coloumNum = sheet.getRow(0).getPhysicalNumberOfCells();
+5）获取总行数int totalRowCount=  sheet.getLastRowNum();  List<String[]> result
+6)遍历行   String[] cellArray = new String[coloumNum];
+7）遍历列  
+8）根据单元格类型获取单元格的值,给cellArray数组赋值,赋值完加到result
+cell.getCellType() == CellType.STRING、cell.getCellType() == CellType.NUMERIC、cell.getCellType() == CellType.BOOLEAN
+if (cell.getCellType() == CellType.STRING) {
+            //字符串型, 默认去掉字符串的前后空格、和换行符
+            strCell = cell.getStringCellValue();
+            if (!StringUtil.isNullOrEmpty(strCell)) {
+                strCell = strCell.replaceAll("\\n", "").trim();
+            }
+        } else if (cell.getCellType() == CellType.NUMERIC) {
+            //数值型
+            if(org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)){
+                Date date = cell.getDateCellValue();
+                strCell = DateUtil.format(date, "yyyy-MM-dd HH:mm:ss");
+            } else {
+                //可避免科学表达式形式的数据出现
+                BigDecimal bd = new BigDecimal(cell.getNumericCellValue());
+                strCell = bd.toString();
+            }
+        } else if (cell.getCellType() == CellType.BOOLEAN) {
+            //布尔型
+            strCell = String.valueOf(cell.getBooleanCellValue());
+        } else {
+            strCell = "";
+        }
+9）遍历结束返回result  结果转换DTO
+
+2、验证：
+1）过滤掉表头项、判断解析的结果是否为空
+2）单次导入量数量限制
+3）验证模板是否对应、验证每个单元格（是否为空、必填项验证、唯一性验证、其他验证）
+4）某行错误返回并记录  List<String> verifailRec = new ArrayList<>();  verifailRec.add("第"+lineNumber+"行："+ArrayUtils.toString(errorList));
+5）验证Excel是否重复记录
+6）验证DB中是否存在重复记录		
+		
+		
+		
+		
+		
+		
+		
+导出Excel: 
+1)创建Workbook  book= new SXSSFWorkbook(CACHE_SIZE);
+2)创建 Sheet sheet = book.createSheet(sheetName);
+Sheet sheet = book.createSheet(sheetName);
+        Row row = null ;
+        int rowNum = 0 ;
+
+        if (data != null && !data.isEmpty()) {
+            for( String[] record : data) {
+                row = sheet.createRow(rowNum++);
+                int cellNum = 0 ;
+                for (String cellValue : record) {
+                    row.createCell(cellNum++).setCellValue(cellValue);
+                }
+            }
+        }
+        return sheet ;
+3)		
+4)
+5)
+6)		
+7)
+8)
+9)		
+		
+ public void listToWorkbook(Workbook workbook, String sheetName, List<String[]> recList) {
+        // 计算一共有多少个工作表
+        int totalSheetNum = recList.size() / sheetSize;
+        if ((recList.size() % sheetSize) > 0) {
+            totalSheetNum++;
+        }
+
+        // 创建相应的工作表，并向其中填充数据
+        if(recList.size() <= sheetSize) {
+            //单个sheet输出
+            createSheet(workbook, sheetName, recList);
+        } else {
+            //多个sheet输出
+            int currRow = 0 ;
+            int sheetNum = 0 ;
+            while(sheetNum < totalSheetNum){
+                int nextIndex = (currRow + sheetSize) > recList.size() ? recList.size() : (currRow + sheetSize) ;
+                createSheet(workbook, sheetName+(++sheetNum), recList.subList(currRow, nextIndex));
+                currRow = nextIndex ;
+            }
+        }
+    }
+
+		
+		
+		
+response.setContentType("text/html");
+//支持中文
+fileName = URLEncoder.encode(fileName,"UTF-8");
+response.addHeader("Content-disposition", "attachment;fileName=" + fileName);
+
+OutputStream outputStream = response.getOutputStream();
+workbook.write(outputStream);
+
+outputStream.flush();
+outputStream.close();
+workbook.close();		
+
+		
+		
+		
+
+public class IdWorkerUtil {
+    private static IdWorker idWorker = new IdWorker(ConfigInfo.WORKER_ID, ConfigInfo.DATACENTER_ID);
+
+    /**
+     * 生成关键主键ID 18位
+     * 该主键生成策略采用Twitter的分布式自增ID算法Snowflake实现，可靠性优于UUID，适用于更严格的场景如订单编号生成
+     * @return
+     */
+    public static long generateId() {
+        return idWorker.nextId();
+    }
+
+    /**
+     * 生成关键主键ID 18位
+     * 该主键生成策略采用Twitter的分布式自增ID算法Snowflake实现，可靠性优于UUID，适用于更严格的场景如订单编号生成
+     * @return
+     */
+    public static String generateIdString() {
+        long id = generateId();
+        return String.valueOf(id);
+    }
+
+    /**
+     * 生成关键主键ID，以日期开头 32位
+     * 该主键生成策略采用Twitter的分布式自增ID算法Snowflake实现，可靠性优于UUID，适用于更严格的场景如订单编号生成
+     * @return
+     */
+    public static String generateIdStartWithDate() {
+        String dateStr = DateUtil.format(new Date(), "yyyyMMddHHmmss");
+        return dateStr + generateId();
+    }
+}
+
+
+/**
+ * 主键生成器
+ */
+class IdWorker {
+    private long workerId;
+    private long dataCenterId;
+    private long sequence = 0L;
+
+    private long twepoch = 1288834974657L;
+
+    private long workerIdBits = 5L;
+    private long dataCenterIdBits = 5L;
+    private long maxWorkerId = -1L ^ (-1L << workerIdBits);
+    private long maxDataCenterId = -1L ^ (-1L << dataCenterIdBits);
+    private long sequenceBits = 12L;
+
+    private long workerIdShift = sequenceBits;
+    private long dataCenterIdShift = sequenceBits + workerIdBits;
+    private long timestampLeftShift = sequenceBits + workerIdBits + dataCenterIdBits;
+    private long sequenceMask = -1L ^ (-1L << sequenceBits);
+
+    private long lastTimestamp = -1L;
+
+    public IdWorker(long workerId, long dataCenterId) {
+        // sanity check for workerId
+        if (workerId > maxWorkerId || workerId < 0) {
+            throw new IllegalArgumentException(String.format("worker Id can't be greater than %d or less than 0", maxWorkerId));
+        }
+        if (dataCenterId > maxDataCenterId || dataCenterId < 0) {
+            throw new IllegalArgumentException(String.format("datacenter Id can't be greater than %d or less than 0", maxDataCenterId));
+        }
+        this.workerId = workerId;
+        this.dataCenterId = dataCenterId;
+    }
+
+    public synchronized long nextId() {
+        long timestamp = timeGen();
+
+        if (timestamp < lastTimestamp) {
+            throw new RuntimeException(String.format("Clock moved backwards.  Refusing to generate id for %d milliseconds", lastTimestamp - timestamp));
+        }
+
+        if (lastTimestamp == timestamp) {
+            sequence = (sequence + 1) & sequenceMask;
+            if (sequence == 0) {
+                timestamp = tilNextMillis(lastTimestamp);
+            }
+        } else {
+            sequence = 0L;
+        }
+
+        lastTimestamp = timestamp;
+
+        return ((timestamp - twepoch) << timestampLeftShift) | (dataCenterId << dataCenterIdShift) | (workerId << workerIdShift) | sequence;
+    }
+
+    protected long tilNextMillis(long lastTimestamp) {
+        long timestamp = timeGen();
+        while (timestamp <= lastTimestamp) {
+            timestamp = timeGen();
+        }
+        return timestamp;
+    }
+
+    protected long timeGen() {
+        return System.currentTimeMillis();
+    }
+}
+
+
+public class ConfigInfo {
+
+    /**
+     * 主键生成器地编号
+     */
+    public static final long WORKER_ID = 1;
+    /**
+     * 数据中心编号
+     */
+    public static final long DATACENTER_ID = 4;
+
+}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
