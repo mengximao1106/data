@@ -18,7 +18,7 @@ var current = {
 };
  
 /*自动加载省份列表*/
-(function showProv() {
+(function showProv() { 
     btn.disabled = true;
     var len = provice.length;
     for (var i = 0; i < len; i++) {
@@ -37,11 +37,9 @@ function showCity(obj) {
     if (val != current.prov) {
         current.prov = val;
         addrShow.value = '';
-        //btn.disabled = true;
     }
-    //console.log(val);
     if (val != null) {
-        city.length = 1;
+        //city.length = 1;
         var cityLen = provice[val]["city"].length;
         for (var j = 0; j < cityLen; j++) {
             var cityOpt = document.createElement('option');
@@ -54,10 +52,11 @@ function showCity(obj) {
  
 /*根据所选的城市来显示县区列表*/
 function showCountry(obj) {
+	country.innerHTML="<option>=请选择县区=</option>";
     var val = obj.options[obj.selectedIndex].value;
     current.city = val;
     if (val != null) {
-        country.length = 1; //清空之前的内容只留第一个默认选项
+        //country.length = 1; //清空之前的内容只留第一个默认选项
         var countryLen = provice[current.prov]["city"][val].districtAndCounty.length;
         if (countryLen == 0) {
             addrShow.value = provice[current.prov].name + '-' + provice[current.prov]["city"][current.city].name;
