@@ -1,0 +1,67 @@
+    public static void main(String[] args) throws Exception {
+
+       InputStream fis = new FileInputStream(new File("D:/test.XLSX"));
+        Workbook  wb =WorkbookFactory.create(fis);
+        Sheet sheet = wb.getSheet("保单列表");
+        int coloumNum = sheet.getRow(0).getPhysicalNumberOfCells();
+        int totalRowCount=  sheet.getLastRowNum();
+        List<String[]> result = new ArrayList();
+        for(int i=0; i<=totalRowCount; i++){
+            Row row = sheet.getRow(++i);
+            String[] array= new String[coloumNum];
+            for(int j=0;j<coloumNum;j++){
+                Cell cell = row.getCell(j);
+                String strCell="";
+                if (cell.getCellType() == CellType.STRING) {
+                    //字符串型, 默认去掉字符串的前后空格、和换行符
+                    strCell = cell.getStringCellValue();
+                    if (!StringUtil.isNullOrEmpty(strCell)) {
+                        strCell = strCell.replaceAll("\\n", "").trim();
+                    }
+                } else if (cell.getCellType() == CellType.NUMERIC) {
+                    //数值型
+                    if(org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)){
+                        Date date = cell.getDateCellValue();
+                        strCell = DateUtil.format(date, "yyyy-MM-dd HH:mm:ss");
+                    } else {
+                        //可避免科学表达式形式的数据出现
+                        BigDecimal bd = new BigDecimal(cell.getNumericCellValue());
+                        strCell = bd.toString();
+                    }
+                } else if (cell.getCellType() == CellType.BOOLEAN) {
+                    //布尔型
+                    strCell = String.valueOf(cell.getBooleanCellValue());
+                } else {
+                    strCell = "";
+                }
+                array[j] = strCell;
+            }
+            result.add(array);
+        }
+
+        System.out.println(result);
+
+        //解析的集合转换成DTO
+
+        //验证标题行
+        String[] titleRec = new String[];//标题行
+        String[] excelTitleRec = result.get(0);
+        if (!Arrays.equals(titleRec, excelTitleRec)) {
+            throw BusinessException.define(ErrorCode.EXCEL_TEMPLATE_ERROR.getDesc()+"; Sheet:" + sheet.getSheetName());
+        }
+
+        //遍历行验证单元格数据是否为空
+        List<String> errorList = new ArrayList<>();
+        List<String> verifailRec=new ArrayList<>();
+        errorList.add("‘WBS编码’不能为空");
+        if (!errorList.isEmpty()) {
+            verifailRec.add("第"+"行："+ArrayUtils.toString(errorList));
+
+        }
+
+        //验证导入的EXcel是否存在重复记录
+
+        //验证导入的EXCEL在DB中是否已存在记录
+
+        //返回错误信息  或者 批量插入表
+    }
