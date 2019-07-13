@@ -3,7 +3,7 @@
 模板
  final String[] titleRec = {"","",""}
 
-1、Excel导出
+1、Excel导入
 1）根据MultipartFile获取输入流  file.getInputStream();
 2）创建WorkBook   = WorkbookFactory.create(in);
 3)根据sheet名称获取sheet Sheet sheet1 = book.getSheet("");
