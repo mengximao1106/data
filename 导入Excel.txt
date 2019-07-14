@@ -1,6 +1,6 @@
     public static void main(String[] args) throws Exception {
 
-       InputStream fis = new FileInputStream(new File("D:/test.XLSX"));
+      InputStream fis = new FileInputStream(new File("D:/test.XLSX"));
         Workbook  wb =WorkbookFactory.create(fis);
         Sheet sheet = wb.getSheet("保单列表");
         int coloumNum = sheet.getRow(0).getPhysicalNumberOfCells();
@@ -40,28 +40,57 @@
         }
 
         System.out.println(result);
-
-        //解析的集合转换成DTO
-
         //验证标题行
-        String[] titleRec = new String[];//标题行
+        String[] titleRec = new String[5];
+        //标题行
         String[] excelTitleRec = result.get(0);
         if (!Arrays.equals(titleRec, excelTitleRec)) {
             throw BusinessException.define(ErrorCode.EXCEL_TEMPLATE_ERROR.getDesc()+"; Sheet:" + sheet.getSheetName());
         }
-
-        //遍历行验证单元格数据是否为空
         List<String> errorList = new ArrayList<>();
         List<String> verifailRec=new ArrayList<>();
-        errorList.add("‘WBS编码’不能为空");
-        if (!errorList.isEmpty()) {
-            verifailRec.add("第"+"行："+ArrayUtils.toString(errorList));
+        List<String> dbRec = new ArrayList<>();
+        List<String> excelRec = new ArrayList<>();
+        List<String> allRec = new ArrayList<>();
+        //遍历集合数组解析的集合转换成DTO
+        for(int i =0; i<result.size();i++){
+            //遍历行验证单元格数据是否为空
+            errorList.add("‘WBS编码’不能为空");
+            if (!errorList.isEmpty()) {
+                verifailRec.add("第"+"行："+ArrayUtils.toString(errorList));
+            }
+
+            //db中是否存在重复记录
+            String policyNo = result.get(i)[1];
+            //查询保单号是否在表中存在
+            if(findCountByPolicyNo(policyNo)>0){
+                dbRec.add(policyNo);
+            }
+
+            //excel是否存在重复记录
+            if(!allRec.contains(policyNo)){
+                allRec.add(policyNo);
+            }else {
+                excelRec.add(policyNo);
+            }
 
         }
 
+        //....
+        if(!verifailRec.isEmpty()){
+            //返回错误集 JSONObject.toJSONString(verifailRec)
+            return ;
+        }
+
         //验证导入的EXcel是否存在重复记录
-
+        if(!excelRec.isEmpty()){
+            return;
+        }
         //验证导入的EXCEL在DB中是否已存在记录
+        if(!dbRec.isEmpty()){
+            return;
+        }
 
-        //返回错误信息  或者 批量插入表
+        //插入表
+
     }
