@@ -1,0 +1,31 @@
+
+@Data
+@NoArgsConstructor
+public class PageData {
+    private int pageSize = 20;
+    private int total;
+    private int currentPageNumber = 1;
+    private List<?> items;
+    private Object data;
+
+
+    public PageData(int pageSize, int total, int currentPageNumber,
+                    List<?> items) throws RemoteException {
+        super();
+        this.pageSize = pageSize;
+        this.total = total;
+        this.currentPageNumber = currentPageNumber;
+        this.items = items;
+    }
+
+
+    public int getTotalPage() {
+        if (total % pageSize == 0) {
+            return total / pageSize;
+        } else {
+            return total / pageSize + 1;
+        }
+    }
+
+
+}

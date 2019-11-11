@@ -1,0 +1,52 @@
+
+public class ContextManager {
+
+    /**
+     * 存储Map变量
+     */
+    private static  ThreadLocal<Map<String, Object>> valueLocal = new ThreadLocal<>();
+
+
+    /**
+     * get value
+     * @param key
+     */
+    public static <T> T getValue(String key) {
+        if (StringUtil.isNullOrEmpty(key)) {
+            throw new IllegalArgumentException("获取上下文中的值失败，KEY不允许为空。");
+        }
+
+        Map<String, Object> values = valueLocal.get();
+        if (values != null && values.size() > 0 && values.containsKey(key)) {
+            return (T) values.get(key);
+        } else {
+            return null;
+        }
+    }
+    /**
+     * set value
+     * @param key
+     * @param value
+     */
+    public static <T> void setValue(String key, T value) {
+        if (StringUtil.isNullOrEmpty(key) || value == null) {
+            throw new IllegalArgumentException("设置上下文中的值失败，KEY和VALUE都不允许为空。");
+        }
+
+        Map<String, Object> values = valueLocal.get();
+        if (values == null) {
+            values = new ConcurrentHashMap<>(16);
+            valueLocal.set(values);
+        }
+        values.put(key, value);
+    }
+
+    /**
+     * 移除ThreadLocal存储内容
+     */
+    public static void remove() {
+        valueLocal.remove();
+    }
+
+
+ }
